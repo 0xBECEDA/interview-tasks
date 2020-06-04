@@ -1,0 +1,139 @@
+#+STARTUP: showall indent hidestars
+
+~Задание:~
+Дано множество двухбайтовых значений. Вывести только те из них, где в
+бинарном представлении нет единиц, стоящих рядом.
+Число 10101010 - выводим, а число 1110010101 уже не подходит.
+
+~Общая идея решения:~
+- перевести все числа в двоичное представление
+- если числа короче заданной длины (в нашем случае 2х байт), заполнить
+  недостающие старшие разряды нулями
+- проверить каждое число, есть ли в его бинарном представлении
+  соседствующие друг с другом единицы
+- сформировать список из чисел, у которх нет соседствующих единиц
+- вернуть этот список чисел
+
+Таким образом мы получаем числа в десятичном представлении, а возвращаем
+в двоичном.
+
+~Решение:~
+Проверяем бинарное число на наличие соседних единиц
+#+NAME: check_number
+#+BEGIN_SRC lisp
+  (defun iter-check-number (first rest)
+    (cond ((null rest) t)
+          ((and (= first 1) (= (car rest) 1))
+           nil)
+          (t (iter-check-number (car rest) (cdr rest)))))
+
+  (defun check-number (bit-number)
+    (if (null bit-number)
+        nil
+        (if (iter-check-number (car bit-number) (cdr bit-number))
+            bit-number)))
+
+
+  ;; (check-number '())
+  ;; (check-number '(1 1 0 1 0 1 0 1 0 1 0 1 0 1))
+  ;; (check-number '(1 0 1 0 1 1 1 0 1 0 1 0 1))
+  ;; (check-number '(1 0 1 0 1 0 1 0 1 0 1))
+  ;; (check-number '(0 0 0 1 1))
+#+END_SRC
+
+Переводим из десятичной системы в двоичную
+#+NAME: ten_to_bin
+#+BEGIN_SRC lisp
+  (defun iter-ten-to-bin (result number)
+    (if (or (= number 0) (= number 1))
+        (cons number result)
+        (multiple-value-bind (quot rem)
+            (floor number 2)
+          (iter-ten-to-bin (cons rem result) quot))))
+
+  (defun ten-to-bin (number)
+    (if number
+        (iter-ten-to-bin '() number)
+        nil))
+
+  ;; (ten-to-bin 65)
+  ;; (ten-to-bin 0)
+  ;; (ten-to-bin 1)
+  ;; (ten-to-bin 41)
+  ;; (ten-to-bin 32768)
+#+END_SRC
+
+Если число не занимает 2 байта целиком, заполняем старшие разряды нулями,
+пока число не достигет заданной длины
+
+#+NAME: append_zero
+#+BEGIN_SRC lisp
+  (defun append-zero (number len)
+    (if (< (length number) len)
+        (append-zero (cons 0 number) len)
+        number))
+
+  ;; (append-zero '(1) 16)
+#+END_SRC
+
+Тест программы.
+
+~make-test-numbers~ создаем список заданной длины, состоящих из рандомных
+чисел, которые не больше заданного максимума
+Затем запускаем ~test-start~ с тестовым списком чисел и указанной
+максимальной длиной числа.
+На выходе получаем числа в бинарном представлении, которые не имею рядом
+стоящих единиц в своем бинарном представлении.
+
+#+NAME: test_start
+#+BEGIN_SRC lisp
+  (defun make-test-numbers (amount max-value)
+    (defun iter (amount max-value result)
+      (if (= amount 0)
+          result
+          (iter (- amount 1)
+                max-value
+                (cons (random (+ max-value 1)) result))))
+    (iter amount max-value '()))
+
+  (defparameter *test-numbers-list* (make-test-numbers 100 32768))
+
+  (defun test-start (numbers-list num-len)
+    (let ((bin-numbers-list '())
+          (aligned-bin-numbers-list '())
+          (ten-numbers-list numbers-list)
+          (result-list '()))
+      ;; перевели все числа в бинарное представление
+      (do ((i (length ten-numbers-list) (decf i)))
+          ((= i 0))
+        (setf bin-numbers-list (cons (ten-to-bin (car ten-numbers-list))
+                                     bin-numbers-list))
+        (setf ten-numbers-list (cdr ten-numbers-list)))
+      ;; выравниваем числа до 2х байт (заполняем старшие разряды нулями, если число меньше
+      ;; 2 байт)
+      (do ((i (length bin-numbers-list) (decf i)))
+          ((= i 0))
+        (setf aligned-bin-numbers-list (cons (append-zero (car bin-numbers-list) num-len)
+                                             aligned-bin-numbers-list))
+        (setf bin-numbers-list (cdr bin-numbers-list)))
+      ;; проверяем все числа предмет ряом стоящих единиц
+      (do ((i (length aligned-bin-numbers-list) (decf i)))
+          ((= i 0) result-list)
+        (let ((cur-result (check-number (car aligned-bin-numbers-list))))
+          (if cur-result
+              (setf result-list (cons cur-result result-list)))
+          (setf aligned-bin-numbers-list (cdr aligned-bin-numbers-list))))))
+
+  ;; ЗАПУСК
+  ;; (test-start *test-numbers-list* 16)
+
+#+END_SRC
+
+Сборка
+#+NAME: mailru
+#+BEGIN_SRC lisp :tangle mailru.lisp :noweb yes tangle :exports code :padline no :comments none
+<<check_number>>
+<<ten_to_bin>>
+<<append_zero>>
+<<test_start>>
+#+END_SRC
