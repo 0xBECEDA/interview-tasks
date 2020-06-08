@@ -1,7 +1,9 @@
 BINNAME= asm-version
 
-all:
-		gcc asm-version.S -o $(BINNAME)
+all: compilation
 
-start: all
+compilation: asm-version.S
+		     gcc asm-version.S -o $(BINNAME)
+
+start:
 	./$(BINNAME)
