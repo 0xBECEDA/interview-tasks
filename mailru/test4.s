@@ -14,24 +14,29 @@ main:
     mov     %rsp, %rbp
 
     mov     $format4, %rdi
-    mov     (%rsp), %rsi
+    mov     %rsp, %rsi
+    xor     %rax, %rax
     call    printf
 
     mov     $0b011, %rbx
     pushq   %rbx
 
     mov     $format4, %rdi
-    mov     (%rsp), %rsi
+    mov     %rsp, %rsi
+    xor     %rax, %rax
     call    printf
 
-    mov     $16, %rcx
+    mov     $10, %rcx
     push    %rcx
 
     mov     $format4, %rdi
     mov     %rsp, %rsi
+    xor     %rax, %rax
     call    printf
 
     nop
     xor     %rax, %rax
+    popq    %rbx
+    popq    %rcx
 	popq	%rbp
 	ret
