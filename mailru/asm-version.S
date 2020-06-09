@@ -1,14 +1,27 @@
 	.file	"asm-version.s"
 	.section	.rodata
 
+format:
+    .string "%d"
+
+format0:
+    .string "\n"
+
+format1:
+    .string "number is %d\n"
+
 format2:
-    .string "%d\n"
+    .string "true\n"
+
+format3:
+    .string "false\n"
 
     .global main
     .type	main, @function
     .text
 
 # проверяет, есть ли у числа единицы в соседних битах
+
 loop:
     pop     %rbx    # взять со стека число-проверку
     pop     %rdx    # взять со стека число-параметр
@@ -42,6 +55,57 @@ generate_params:
 
     jmp   loop
 
+# печатает число в бинарном представлении
+print_bin_number:
+
+    pop     %rcx            # получить счетчик
+    pop     %rbx            # получить число, которое будем печатать
+    rcl     $1, %bx
+    dec     %rcx
+
+    jnb     print_0         # если влаг cf = 0, то идем печатать 0
+    jmp     print_1         # иначе идем печатать 1
+
+print_1:
+    push    %rcx            # сохраняем счетчик
+
+    mov     $1, %rsi        # печатаем 1
+    mov     $format, %rdi
+    xor     %rax, %rax
+    call    printf
+
+    pop     %rcx            # проверяем счетчик
+    cmp     $0, %rcx        # если 0, то оформляем конец числа
+    je      end_of_num
+
+    push    %rbx            # иначе отправляем число и счетчик в стек, выводим биты дальше
+    push    %rcx
+    jmp     print_bin_number
+
+print_0:
+    push    %rcx            # производим действия, аналогичные в print_1,
+                            # но печатаем 0
+    mov     $0, %rsi
+    mov     $format, %rdi
+    xor     %rax, %rax
+    call    printf
+
+    pop     %rcx
+    cmp     $0, %rcx
+    je      end_of_num
+
+    push    %rbx
+    push    %rcx
+
+    jmp     print_bin_number
+
+# оформляет конец строки выводимого бинарного числа
+end_of_num:
+    mov     $format0, %rdi  # печать перевода строки
+    call    puts
+
+    jmp     generate_params
+
 main:
     pushq	%rbp
     mov     %rsp, %rbp
@@ -54,19 +118,23 @@ main:
 # выход из программы
 exit:
     nop
+    xor     %rax, %rax
 	popq	%rbp
 	ret
 
-# печатает число, у которого нет соседствующих единиц
+# ветка выполняется в случае, если у числа нет единиц в соседних битах
 true:
-    mov     %rax, %rsi
-    mov     %rax, %rbx     # сохраняем число-параметр, потому что printf перезапишет rax
-    mov     $format2, %edi
-    call    printf
-    push    %rbx           # отправляем число-параметр в стек
-    jmp     generate_params
+    push    %rax          # отправляем число-параметр в стек
+    push    %rax
+
+    mov     $16, %rcx     # устанавливаем счетчик битов
+    push    %rcx
+
+    jmp     print_bin_number
 
 # ветка выполняется в случае, если число имеет соседствующие единицы
 false:
     push    %rax
+    #mov     $format3, %rdi
+    #call    puts
     jmp     generate_params
