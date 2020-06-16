@@ -1,0 +1,9 @@
+BINNAME= c-version
+
+all: compilation
+
+compilation: c-version.c
+		     gcc c-version.c -fno-pie -no-pie -o $(BINNAME)
+
+start:
+	./$(BINNAME)
