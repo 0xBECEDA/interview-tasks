@@ -54,8 +54,8 @@
               (progn
                 (setf (aref arr i) 0)
                 (setf mask (ash mask -1))))))
-    (setf (aref arr new-fill-p-arr)  "")
-    (values arr (+ 1 new-fill-p-arr))))
+      (setf (aref arr new-fill-p-arr)  "")
+      (values arr (+ 1 new-fill-p-arr))))
 
   ;; запуск
   (defun start ()
@@ -83,7 +83,7 @@
           (setf (aref final-arr i) (aref allocated-arr i)))
         ;; вывод массива
         (write final-arr :stream t )
-      t)))
+        t)))
 
   ;;(start)
 #+END_SRC
