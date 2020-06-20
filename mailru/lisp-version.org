@@ -1,0 +1,89 @@
+#+STARTUP: showall indent hidestars
+
+#+NAME: check_number
+#+BEGIN_SRC lisp
+  ;; считывание строки с числом и преобразование ее в число
+  (defun read-and-parse()
+    (let ((test (read-line)))
+      (multiple-value-bind (num amount)
+          (parse-integer test)
+        num)))
+
+  ;; считает, сколько бит в числе
+  (defun count-bits (num)
+    (let ((mask 9223372036854775808))
+      (do ((i 64 (- i 1)))
+          ((= i 0))
+        (let ((and-result (logand num mask)))
+          (if (= and-result mask)
+              (return-from count-bits i)
+              (setf mask (ash mask -1)))))))
+
+  ;; выделение памяти
+  (defun allocate-memory (num-of-bits user-num)
+    (let ((n (list (* (+ num-of-bits 1) user-num))))
+      (make-array n :initial-element nil)))
+
+  ;; создаем маску
+  (defun make-mask (cnt-bits num)
+    (let ((mask num))
+      (do ((i (- 64 cnt-bits) (- i 1)))
+          ((= i 0) mask)
+        (setf mask (ash mask -1)))))
+
+  ;; анализ числа, есть ли у него единицы в соседних битах
+  (defun analyse-num (num-of-bits user-num mask)
+    (do ((i num-of-bits (- i 1)))
+        ((= i 0) t)
+      (let ((and-result (logand user-num mask)))
+        (if (= and-result mask)
+            (return-from analyse-num nil)
+            (setf mask (ash mask -1))))))
+
+  ;; создание бинарного представления числа
+  (defun make-bin-num-str (user-num arr fill-pnt-arr cnt-bits)
+    (let ((mask (make-mask cnt-bits 9223372036854775808))
+          (new-fill-p-arr (+ fill-pnt-arr cnt-bits)))
+      (do ((i fill-pnt-arr (+ i 1)))
+          ((= i new-fill-p-arr))
+        (let ((and-result (logand user-num mask)))
+          (if (= and-result mask)
+              (progn
+                (setf (aref arr i) 1)
+                (setf mask (ash mask -1)))
+              (progn
+                (setf (aref arr i) 0)
+                (setf mask (ash mask -1))))))
+    (setf (aref arr new-fill-p-arr)  "")
+    (values arr (+ 1 new-fill-p-arr))))
+
+  ;; запуск
+  (defun start ()
+    ;; прочитали число с ввода, сосчитали в нем биты, выделили память, создали маску
+    ;; создали индекс заполнения памяти
+    (let* ((user-num (read-and-parse))
+           (cnt-bits (count-bits user-num))
+           (allocated-arr (allocate-memory cnt-bits user-num))
+           (mask (make-mask cnt-bits 13835058055282163712))
+           (fill-pnt 0))
+      ;; анализируем все числа от 0 до прочитанного с ввода
+      (do ((i 0 (+ 1 i)))
+          ((= i user-num))
+        (let ((value (analyse-num cnt-bits i mask)))
+          (if value
+              (multiple-value-bind (cur-arr new-fill-p)
+                  (make-bin-num-str i allocated-arr fill-pnt cnt-bits)
+                (setf allocated-arr cur-arr
+                      fill-pnt new-fill-p)))))
+      ;; завили новый массив, точно по заполненное кол-во байт, чтоб не печатать пустые байты
+      (let ((final-arr (make-array fill-pnt :initial-element nil)))
+        ;; переписали в него бинарные числа
+        (do ((i 0 (+ 1 i)))
+            ((= i fill-pnt))
+          (setf (aref final-arr i) (aref allocated-arr i)))
+        ;; вывод массива
+        (write final-arr :stream t )
+      t)))
+
+  ;;(start)
+#+END_SRC
