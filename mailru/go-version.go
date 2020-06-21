@@ -36,11 +36,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	var mask int = 2147483648
+	if userNum > 65535 {
+		fmt.Println("Error : too big num\n")
+		os.Exit(0)
+	}
+
+	var mask int = 32768
 	cntBits := 0
 
 	// считаем кол-во битов в числе
-	for i := 32; i > 0;  i-- {
+	for i := 16; i > 0;  i-- {
 		var andRes int = userNum & mask
 
 		if andRes == mask {
@@ -51,11 +56,11 @@ func main() {
 	}
     // устанавливаем маску, которая будет участвовать в создании строчного бинарного
 	// представления чисел
-	maskForBinPrint := mask
+	maskForBinPrint := 32768
 
 	// устанавливаем маску, с помощью которой будем искать соседние единицы в числах
-	mask = 3221225472
-	for i := 32 - cntBits; i > 0;  i-- {
+	mask = 49152
+	for i := 16 - cntBits; i > 0;  i-- {
 
 		mask = mask >> 1
 	}
